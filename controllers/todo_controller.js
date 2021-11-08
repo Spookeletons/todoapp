@@ -1,65 +1,58 @@
 const {sequelize} = require("../models/index");
 const {QueryTypes} = require("sequelize");
+const {ToDo} = require('../models/index');
 
 module.exports.homeRoute = async function(req, res, next) {
-    let toDoItems = await sequelize.query('select * from todo', {type: QueryTypes.SELECT });
+    let toDoItems = await ToDo.findAll();
     res.render('index', {toDoItems});
 };
 module.exports.addForm = function(req,res){
     res.render('create_todo');
 };
 module.exports.addItem = async function(req, res) {
-    await sequelize.query('insert into todo (description) values (:description)', {
-        type: QueryTypes.INSERT,
-        replacements: {
-            description: req.body.description
-        }
+    await ToDo.create({
+        description: req.body.description
     });
     res.redirect('/');
 };
 module.exports.markAsComplete = async function(req, res) {
-    await sequelize.query('update todo set completed = true where id = :id', {
-        type: QueryTypes.UPDATE,
-        replacements: {
+    await ToDo.update({completed: true}, {
+        where: {
             id: req.params.id
         }
     });
     res.redirect('/');
 };
 module.exports.markAsIncomplete = async function(req, res) {
-    await sequelize.query('update todo set completed = false where id = :id', {
-        type: QueryTypes.UPDATE,
-        replacements: {
+    await ToDo.update({completed: false}, {
+        where: {
             id: req.params.id
         }
     });
     res.redirect('/');
 };
 module.exports.deleteItem = async function(req, res) {
-    await sequelize.query('delete from todo where id = :id', {
-        type: QueryTypes.DELETE,
-        replacements: {
+    await ToDo.destroy({
+        where: {
             id: req.params.id
         }
     });
     res.redirect('/');
 };
 module.exports.renderEditForm = async function(req, res) {
-    const results = await sequelize.query('select * from todo where id = :id', {
-        type: QueryTypes.SELECT,
-        replacements: {
-            id: req.params.id
+    let todo = await ToDo.findByPk(req.params.id);
+    res.render('edit_todo', {
+        item: {
+            description: todo.description,
+            id: todo.id
         }
     });
-    const item = results[0];
-    res.render('edit_todo', {item});
+    res.redirect('/');
 };
 module.exports.makeEdit = async function(req, res) {
-    await sequelize.query('update todo set description = :description where id = :id', {
-        type: QueryTypes.UPDATE,
-        replacements: {
-            id: req.params.id,
-            description: req.body.description
+    await ToDo.update({description: req.body.description}, {
+        where: {
+            id: req.params.id
         }
     });
     res.redirect('/');
